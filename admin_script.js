@@ -9,7 +9,17 @@ let appointments = JSON.parse(localStorage.getItem('appointments')) || [
 
 // Initialize the admin dashboard when the DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize theme from localStorage or default to light
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    setTheme(savedTheme);
+    
+    // Initialize notification system
+    if (typeof NotificationSystem !== 'undefined') {
+        window.notificationSystem = new NotificationSystem();
+    }
+    
     initAdminDashboard();
+    
     // Save initial appointments to localStorage if not already set
     if (!localStorage.getItem('appointments')) {
         localStorage.setItem('appointments', JSON.stringify(appointments));
@@ -66,11 +76,51 @@ function setupEventListeners() {
         });
     });
     
-    // Logout button
+    // Logout button - FIXED to redirect to index.html
     document.getElementById('logout-btn').addEventListener('click', handleLogout);
     
     // Add doctor button
     document.getElementById('add-doctor-btn').addEventListener('click', addNewDoctor);
+    
+    // Dark mode toggle - FIXED implementation
+    const darkModeToggle = document.getElementById('dark-mode-toggle');
+    if (darkModeToggle) {
+        // Set initial state based on saved theme
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        darkModeToggle.checked = savedTheme === 'dark';
+        
+        // Add event listener
+        darkModeToggle.addEventListener('change', function() {
+            const newTheme = this.checked ? 'dark' : 'light';
+            setTheme(newTheme);
+        });
+    }
+    
+    // Notification bell event listener
+    const notificationBell = document.getElementById('notification-bell');
+    if (notificationBell) {
+        notificationBell.addEventListener('click', function() {
+            const panel = document.getElementById('notification-panel');
+            if (panel) {
+                panel.classList.toggle('active');
+                
+                // Mark all as read when opening
+                if (panel.classList.contains('active') && window.notificationSystem) {
+                    window.notificationSystem.markAllAsRead();
+                }
+            }
+        });
+    }
+    
+    // Clear notifications button
+    const clearBtn = document.getElementById('clear-notifications');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function() {
+            if (window.notificationSystem) {
+                window.notificationSystem.clearAllNotifications();
+            }
+        });
+    }
     
     // Appointment action buttons
     document.addEventListener('click', (e) => {
@@ -201,15 +251,30 @@ function switchView(viewType) {
     alert(`Switching to ${viewType} view...`);
 }
 
+// FIXED: Logout function now redirects to index.html
 function handleLogout() {
     if (confirm('Are you sure you want to logout?')) {
-        // In a real application, this would clear the session and redirect
-        alert('Logout successful! Redirecting to login page...');
-        // window.location.href = 'login.html';
+        // Clear any admin session data if needed
+        localStorage.removeItem('adminLoggedIn');
+        
+        // Redirect to index.html
+        window.location.href = 'index.html';
     }
 }
 
 function addNewDoctor() {
     // In a real application, this would open a form modal
     alert('Add New Doctor functionality would open here.');
+}
+
+// Theme functionality - FIXED implementation
+function setTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+    
+    // Update toggle button state
+    const darkModeToggle = document.getElementById('dark-mode-toggle');
+    if (darkModeToggle) {
+        darkModeToggle.checked = theme === 'dark';
+    }
 }
