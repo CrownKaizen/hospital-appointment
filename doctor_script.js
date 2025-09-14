@@ -45,11 +45,49 @@ function init() {
     setupPatientRecords();
     setupDarkMode();
     
+    // Initialize notification system
+    if (typeof NotificationSystem !== 'undefined') {
+        window.notificationSystem = new NotificationSystem();
+    }
+    
+    // Set up notification event listeners
+    setupNotificationListeners();
+    
     // Load any saved data from localStorage
     loadSavedData();
     
     // Update dashboard stats
     updateDashboardStats();
+    renderAppointmentRequests();
+}
+
+// Setup notification listeners
+function setupNotificationListeners() {
+    // Notification bell event listener
+    const notificationBell = document.getElementById('notification-bell');
+    if (notificationBell) {
+        notificationBell.addEventListener('click', function() {
+            const panel = document.getElementById('notification-panel');
+            if (panel) {
+                panel.classList.toggle('active');
+                
+                // Mark all as read when opening
+                if (panel.classList.contains('active') && window.notificationSystem) {
+                    window.notificationSystem.markAllAsRead();
+                }
+            }
+        });
+    }
+    
+    // Clear notifications button
+    const clearBtn = document.getElementById('clear-notifications');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function() {
+            if (window.notificationSystem) {
+                window.notificationSystem.clearAllNotifications();
+            }
+        });
+    }
 }
 
 // Navigation functions
@@ -75,7 +113,7 @@ function setupNavigation() {
     // Mobile menu toggle
     mobileMenuBtn.addEventListener('click', toggleMobileMenu);
     
-    // Logout buttons
+    // Logout buttons - FIXED to redirect to index.html
     logoutBtns.forEach(btn => {
         btn.addEventListener('click', handleLogout);
     });
@@ -105,18 +143,14 @@ function toggleMobileMenu() {
     }
 }
 
+// FIXED: Logout function now redirects to index.html
 function handleLogout() {
     if (confirm('Are you sure you want to logout?')) {
         // Clear any user data
         localStorage.removeItem('doctorAuthToken');
         
-        // In a real app, this would redirect to a login page
-        alert('Logout successful! Redirecting to login...');
-        
-        // For demo purposes, just reload the page
-        setTimeout(() => {
-            window.location.reload();
-        }, 1000);
+        // Redirect to index.html
+        window.location.href = 'index.html';
     }
 }
 
@@ -719,142 +753,19 @@ function formatDateString(dateString) {
     return '2023-06-15';
 }
 
-// Initialize the application when the DOM is fully loaded
-document.addEventListener('DOMContentLoaded', init);
-
-
-// Notification functions
-function sendNotificationToPatient(patientId, message, type = 'info') {
-    // In a real application, this would send to a server
-    // For demo, we'll store in localStorage
-    const notifications = JSON.parse(localStorage.getItem('patientNotifications') || '{}');
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    init();
     
-    if (!notifications[patientId]) {
-        notifications[patientId] = [];
+    // Load data from localStorage if available
+    if (localStorage.getItem('appointments')) {
+        appointments = JSON.parse(localStorage.getItem('appointments'));
     }
     
-    notifications[patientId].push({
-        id: Date.now(),
-        message,
-        type,
-        timestamp: new Date().toISOString(),
-        read: false
-    });
-    
-    localStorage.setItem('patientNotifications', JSON.stringify(notifications));
-    console.log(`Notification sent to patient ${patientId}: ${message}`);
-}
-
-// Update the handleRescheduleAppointment function
-function handleRescheduleAppointment(e) {
-    e.preventDefault();
-    
-    const appointmentId = e.target.getAttribute('data-appointment-id');
-    const newDate = document.getElementById('reschedule-date').value;
-    const newTime = document.getElementById('reschedule-time').value;
-    const reason = document.getElementById('reschedule-reason').value;
-    
-    // Format the new date and time
-    const formattedDate = new Date(newDate).toLocaleDateString('en-US', { 
-        weekday: 'short', 
-        month: 'short', 
-        day: 'numeric' 
-    });
-    const formattedTime = newTime + ':00';
-    
-    // Find and update the appointment
-    const appointmentIndex = appointments.findIndex(a => a.id === appointmentId);
-    if (appointmentIndex !== -1) {
-        const oldDate = appointments[appointmentIndex].date;
-        const oldTime = appointments[appointmentIndex].time;
-        
-        appointments[appointmentIndex].date = newDate;
-        appointments[appointmentIndex].time = formattedTime;
-        appointments[appointmentIndex].rescheduleReason = reason;
-        
-        // Send notification to patient
-        const patientName = appointments[appointmentIndex].patient;
-        const notificationMessage = `Your appointment with Dr. Myoui has been rescheduled from ${oldTime} on ${oldDate} to ${formattedTime} on ${formattedDate}. Reason: ${reason || 'No reason provided'}`;
-        
-        sendNotificationToPatient(patientName, notificationMessage, 'appointment');
-        
-        // Update UI
-        updateDashboardStats();
-        showNotification('Appointment rescheduled successfully. Patient notified.', 'success');
+    if (localStorage.getItem('appointmentRequests')) {
+        appointmentRequests = JSON.parse(localStorage.getItem('appointmentRequests'));
     }
     
-    document.getElementById('reschedule-modal').style.display = 'none';
-    document.getElementById('reschedule-form').reset();
-}
-
-// Update the handleCancelAppointment function
-function handleCancelAppointment(e) {
-    e.preventDefault();
-    
-    const appointmentId = document.getElementById('cancel-appointment-id').value;
-    const reason = document.getElementById('cancel-reason').value;
-    
-    // Find and update the appointment
-    const appointmentIndex = appointments.findIndex(a => a.id === appointmentId);
-    if (appointmentIndex !== -1) {
-        const patientName = appointments[appointmentIndex].patient;
-        const appointmentTime = `${appointments[appointmentIndex].time} on ${appointments[appointmentIndex].date}`;
-        
-        appointments[appointmentIndex].status = 'cancelled';
-        appointments[appointmentIndex].cancellationReason = reason;
-        
-        // Send notification to patient
-        const notificationMessage = `Your appointment with Dr. Myoui scheduled for ${appointmentTime} has been cancelled. Reason: ${reason}`;
-        sendNotificationToPatient(patientName, notificationMessage, 'cancellation');
-        
-        // Update UI
-        updateDashboardStats();
-        showNotification('Appointment cancelled successfully. Patient notified.', 'success');
-    }
-    
-    document.getElementById('cancel-modal').style.display = 'none';
-    document.getElementById('cancel-form').reset();
-}
-
-// Update the handleConfirmAppointment function
-function handleConfirmAppointment(e) {
-    e.preventDefault();
-    
-    const requestId = e.target.getAttribute('data-request-id');
-    const notes = document.getElementById('confirm-notes').value;
-    
-    // Find the request
-    const requestIndex = appointmentRequests.findIndex(r => r.id === requestId);
-    if (requestIndex !== -1) {
-        const request = appointmentRequests[requestIndex];
-        
-        // Create a new appointment
-        const newAppointment = {
-            id: `100${appointments.length + 1}`,
-            patient: request.patient,
-            time: request.date.split(', ')[1],
-            date: formatDateString(request.date),
-            reason: request.reason,
-            status: 'confirmed',
-            notes: notes
-        };
-        
-        // Add to appointments
-        appointments.push(newAppointment);
-        
-        // Send notification to patient
-        const notificationMessage = `Your appointment request with Dr. Myoui has been approved. Scheduled for ${newAppointment.time} on ${newAppointment.date}.`;
-        sendNotificationToPatient(request.patient, notificationMessage, 'confirmation');
-        
-        // Remove from requests
-        appointmentRequests.splice(requestIndex, 1);
-        
-        // Update UI
-        updateDashboardStats();
-        renderAppointmentRequests();
-        showNotification('Appointment confirmed successfully. Patient notified.', 'success');
-    }
-    
-    document.getElementById('confirm-modal').style.display = 'none';
-    document.getElementById('confirm-form').reset();
-}
+    updateDashboardStats();
+    renderAppointmentRequests();
+});
