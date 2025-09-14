@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>City Hospital - Doctor Portal</title>
+  <title>Hospital Management System - Doctor Portal</title>
+  <link rel="icon" href="favi.png" type="image/x-icon">
   <link rel="stylesheet" href="doctor_styles.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -584,6 +585,17 @@
       </div>
     </section>
   </main>
+  
+  <!-- Notification Panel -->
+  <div id="notification-panel" class="notification-panel">
+    <div class="notification-header">
+      <h3>Notifications</h3>
+      <button id="clear-notifications" class="btn btn-text">Clear All</button>
+    </div>
+    <div class="notification-list" id="notification-list">
+      <!-- Notifications will be added here dynamically -->
+    </div>
+  </div>
 
   <footer>
     <div class="container footer-container">
@@ -723,6 +735,8 @@
       </div>
     </div>
   </div>
+
+  
 
   <div id="notification" class="notification"></div>
 
