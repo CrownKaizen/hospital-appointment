@@ -138,15 +138,15 @@ function handleSignup(e) {
   }, 2000);
 }
 
+// FIXED: Logout function now redirects to index.html
 function handleLogout() {
   // Clear user data
   localStorage.removeItem('currentUser');
   currentUser = null;
   isLoggedIn = false;
   
-  // Navigate to auth page
-  navigateTo('auth');
-  showNotification('You have been logged out successfully', 3000);
+  // Redirect to index.html
+  window.location.href = 'index.html';
 }
 
 // Navigation
@@ -349,158 +349,11 @@ function initAppointments() {
   });
 }
 
-// Event Listeners
-document.addEventListener('DOMContentLoaded', function() {
-  // Initialize theme
-  initTheme();
-  
-  // Initialize auth
-  initAuth();
-  
-  // Initialize animations
-  initAnimations();
-  
-  // Initialize functionality
-  initAppointments();
-  
-  // Set up event listeners
-  darkModeToggle.addEventListener('change', toggleTheme);
-  darkModeToggleMobile.addEventListener('change', toggleTheme);
-  
-  navIcon.addEventListener('click', toggleMobileMenu);
-  
-  navLinks.forEach(link => {
-    link.addEventListener('click', function(e) {
-      e.preventDefault();
-      const pageId = this.getAttribute('data-page');
-      
-      // Check if user is logged in for protected pages
-      if (pageId !== 'auth' && !isLoggedIn) {
-        showNotification('Please log in to access this page', 3000);
-        navigateTo('auth');
-        return;
-      }
-      
-      navigateTo(pageId);
-    });
-  });
-  
-  // Auth tab switching
-  authTabs.forEach(tab => {
-    tab.addEventListener('click', function() {
-      const tabName = this.getAttribute('data-tab');
-      switchAuthTab(tabName);
-    });
-  });
-  
-  // Form submissions
-  if (loginForm) {
-    loginForm.addEventListener('submit', handleLogin);
-  }
-  
-  if (signupForm) {
-    signupForm.addEventListener('submit', handleSignup);
-  }
-  
-  if (contactForm) {
-    contactForm.addEventListener('submit', handleContactForm);
-  }
-  
-  // Logout buttons
-  if (logoutBtn) {
-    logoutBtn.addEventListener('click', handleLogout);
-  }
-  
-  if (logoutBtnMobile) {
-    logoutBtnMobile.addEventListener('click', handleLogout);
-  }
-  
-  // Booking functionality
-  if (bookAppointmentBtn) {
-    bookAppointmentBtn.addEventListener('click', function() {
-      navigateTo('find-doctor');
-    });
-  }
-  
-  bookDoctorBtns.forEach(btn => {
-    btn.addEventListener('click', function() {
-      const doctorId = this.getAttribute('data-doctor-id');
-      openBookingModal(doctorId);
-    });
-  });
-  
-  // Modal functionality
-  if (closeModal) {
-    closeModal.addEventListener('click', closeBookingModal);
-  }
-  
-  if (bookingForm) {
-    bookingForm.addEventListener('submit', handleBooking);
-  }
-  
-  // Close modal when clicking outside
-  window.addEventListener('click', function(e) {
-    if (e.target === bookingModal) {
-      closeBookingModal();
-    }
-  });
-  
-  // Add some interactive effects to cards
-  const cards = document.querySelectorAll('.dashboard-card, .doctor-card, .appointment-card');
-  cards.forEach(card => {
-    card.addEventListener('mouseenter', function() {
-      this.style.transform = 'translateY(-5px)';
-      this.style.boxShadow = '0 10px 20px rgba(0, 0, 0, 0.15)';
-    });
-    
-    card.addEventListener('mouseleave', function() {
-      this.style.transform = '';
-      this.style.boxShadow = '';
-    });
-  });
-  
-  // Add ripple effect to buttons
-  const buttons = document.querySelectorAll('.btn');
-  buttons.forEach(button => {
-    button.addEventListener('click', function(e) {
-      const x = e.clientX - e.target.offsetLeft;
-      const y = e.clientY - e.target.offsetTop;
-      
-      const ripple = document.createElement('span');
-      ripple.classList.add('ripple');
-      ripple.style.left = `${x}px`;
-      ripple.style.top = `${y}px`;
-      
-      this.appendChild(ripple);
-      
-      setTimeout(() => {
-        ripple.remove();
-      }, 600);
-    });
-  });
-  
-  // Add keyboard navigation
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape' && !mobileMenu.hidden) {
-      toggleMobileMenu();
-    }
-    
-    if (e.key === 'Escape' && bookingModal.style.display === 'block') {
-      closeBookingModal();
-    }
-  });
-  
-  // Add current year to footer
-  document.querySelector('footer .container').innerHTML = `&copy; ${new Date().getFullYear()} City Hospital. All rights reserved.`;
-});
-
-// Add to the existing script.js
-
 // Notification functions for patients
 function checkForNotifications() {
     // In a real app, this would check with a server
     // For demo, we'll use localStorage
-    const patientName = "Ernesto Batumbakal"; // This would come from authentication
+    const patientName = "Chou Tzuyu"; // This would come from authentication
     const notifications = JSON.parse(localStorage.getItem('patientNotifications') || '{}');
     const patientNotifications = notifications[patientName] || [];
     
@@ -558,7 +411,7 @@ function showNotificationIndicator(count) {
 }
 
 function showAllNotifications() {
-    const patientName = "Ernesto Batumbakal";
+    const patientName = "Chou Tzuyu";
     const notifications = JSON.parse(localStorage.getItem('patientNotifications') || '{}');
     const patientNotifications = notifications[patientName] || [];
     
@@ -588,14 +441,190 @@ function showAllNotifications() {
     }
 }
 
-// Call this function when the patient page loads
-// Add to the init function in script.js
+// Setup notification listeners
+function setupNotificationListeners() {
+    // Notification bell event listener
+    const notificationBell = document.getElementById('notification-bell');
+    if (notificationBell) {
+        notificationBell.addEventListener('click', function() {
+            const panel = document.getElementById('notification-panel');
+            if (panel) {
+                panel.classList.toggle('active');
+                
+                // Mark all as read when opening
+                if (panel.classList.contains('active') && window.notificationSystem) {
+                    window.notificationSystem.markAllAsRead();
+                }
+            }
+        });
+    }
+    
+    // Clear notifications button
+    const clearBtn = document.getElementById('clear-notifications');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function() {
+            if (window.notificationSystem) {
+                window.notificationSystem.clearAllNotifications();
+            }
+        });
+    }
+}
+
+// Initialize the application
 function init() {
-    // Existing initialization code...
+    // Initialize theme
+    initTheme();
+    
+    // Initialize auth
+    initAuth();
+    
+    // Initialize animations
+    initAnimations();
+    
+    // Initialize functionality
+    initAppointments();
+    
+    // Initialize notification system
+    if (typeof NotificationSystem !== 'undefined') {
+        window.notificationSystem = new NotificationSystem();
+    }
+    
+    // Set up notification event listeners
+    setupNotificationListeners();
     
     // Check for notifications
     checkForNotifications();
     
-    // Set up interval to check for new notifications
-    setInterval(checkForNotifications, 30000); // Check every 30 seconds
+    // Set up event listeners
+    darkModeToggle.addEventListener('change', toggleTheme);
+    darkModeToggleMobile.addEventListener('change', toggleTheme);
+    
+    navIcon.addEventListener('click', toggleMobileMenu);
+    
+    navLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const pageId = this.getAttribute('data-page');
+            
+            // Check if user is logged in for protected pages
+            if (pageId !== 'auth' && !isLoggedIn) {
+                showNotification('Please log in to access this page', 3000);
+                navigateTo('auth');
+                return;
+            }
+            
+            navigateTo(pageId);
+        });
+    });
+    
+    // Auth tab switching
+    authTabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const tabName = this.getAttribute('data-tab');
+            switchAuthTab(tabName);
+        });
+    });
+    
+    // Form submissions
+    if (loginForm) {
+        loginForm.addEventListener('submit', handleLogin);
+    }
+    
+    if (signupForm) {
+        signupForm.addEventListener('submit', handleSignup);
+    }
+    
+    if (contactForm) {
+        contactForm.addEventListener('submit', handleContactForm);
+    }
+    
+    // Logout buttons
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', handleLogout);
+    }
+    
+    if (logoutBtnMobile) {
+        logoutBtnMobile.addEventListener('click', handleLogout);
+    }
+    
+    // Booking functionality
+    if (bookAppointmentBtn) {
+        bookAppointmentBtn.addEventListener('click', function() {
+            navigateTo('find-doctor');
+        });
+    }
+    
+    bookDoctorBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const doctorId = this.getAttribute('data-doctor-id');
+            openBookingModal(doctorId);
+        });
+    });
+    
+    // Modal functionality
+    if (closeModal) {
+        closeModal.addEventListener('click', closeBookingModal);
+    }
+    
+    if (bookingForm) {
+        bookingForm.addEventListener('submit', handleBooking);
+    }
+    
+    // Close modal when clicking outside
+    window.addEventListener('click', function(e) {
+        if (e.target === bookingModal) {
+            closeBookingModal();
+        }
+    });
+    
+    // Add some interactive effects to cards
+    const cards = document.querySelectorAll('.dashboard-card, .doctor-card, .appointment-card');
+    cards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+            this.style.boxShadow = '0 10px 20px rgba(0, 0, 0, 0.15)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = '';
+            this.style.boxShadow = '';
+        });
+    });
+    
+    // Add ripple effect to buttons
+    const buttons = document.querySelectorAll('.btn');
+    buttons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            const x = e.clientX - e.target.offsetLeft;
+            const y = e.clientY - e.target.offsetTop;
+            
+            const ripple = document.createElement('span');
+            ripple.classList.add('ripple');
+            ripple.style.left = `${x}px`;
+            ripple.style.top = `${y}px`;
+            
+            this.appendChild(ripple);
+            
+            setTimeout(() => {
+                ripple.remove();
+            }, 600);
+        });
+    });
+    
+    // Add keyboard navigation
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && !mobileMenu.hidden) {
+            toggleMobileMenu();
+        }
+        
+        if (e.key === 'Escape' && bookingModal.style.display === 'block') {
+            closeBookingModal();
+        }
+    });
+    
+    // Add current year to footer
+    document.querySelector('footer .container').innerHTML = `&copy; ${new Date().getFullYear()} City Hospital. All rights reserved.`;
 }
+
+// Start the application
+document.addEventListener('DOMContentLoaded', init);
