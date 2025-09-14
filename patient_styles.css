@@ -1038,3 +1038,5 @@ footer {
     font-size: 2rem;
   }
 }
+
+@import url('notification.css');
